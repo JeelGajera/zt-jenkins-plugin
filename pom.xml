@@ -11,7 +11,7 @@
 
   <groupId>io.jenkins.plugins</groupId>
   <artifactId>zerothreat-dast-scanner</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>ZeroThreat AI DAST Scanner</name>
