@@ -1,16 +1,14 @@
 package io.jenkins.plugins.zerothreatai.services;
 
 import hudson.util.Secret;
-import net.sf.json.JSONObject;
-
+import io.jenkins.plugins.zerothreatai.models.ScanResponse;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Date;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
-
-import io.jenkins.plugins.zerothreatai.models.ScanResponse;
+import net.sf.json.JSONObject;
 
 public class ScanService {
     private static final String SCAN_API_URL = "https://api.zerothreat.ai/api/scan/devops";
@@ -24,18 +22,18 @@ public class ScanService {
             conn.setRequestProperty(ZT_TOKEN_HEADER_KEY, Secret.toString(token));
             conn.setDoOutput(true);
 
-            try (Scanner scanner = new Scanner(conn.getInputStream()).useDelimiter("\\A")) {
+            try (Scanner scanner = new Scanner(conn.getInputStream(), StandardCharsets.UTF_8).useDelimiter("\\A")) {
                 String response = scanner.hasNext() ? scanner.next() : "";
                 scanner.close();
 
                 JSONObject jsonResponse = JSONObject.fromObject(response);
                 ScanResponse scanResponse = new ScanResponse();
-                scanResponse.Status = jsonResponse.getInt("status");
-                scanResponse.Message = jsonResponse.getString("message");
-                scanResponse.Code = jsonResponse.getString("code");
-                scanResponse.ScanStatus = jsonResponse.getInt("scanStatus");
-                scanResponse.Url = jsonResponse.getString("url");
-                scanResponse.TimeStamp = jsonResponse.getString("timeStamp");
+                scanResponse.setStatus(jsonResponse.getInt("status"));
+                scanResponse.setMessage(jsonResponse.getString("message"));
+                scanResponse.setCode(jsonResponse.getString("code"));
+                scanResponse.setScanStatus(jsonResponse.getInt("scanStatus"));
+                scanResponse.setUrl(jsonResponse.getString("url"));
+                scanResponse.setTimeStamp(jsonResponse.getString("timeStamp"));
                 return scanResponse;
             }
         } catch (Exception e) {
@@ -53,15 +51,17 @@ public class ScanService {
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty(ZT_TOKEN_HEADER_KEY, Secret.toString(token));
 
-                Scanner scanner = new Scanner(conn.getInputStream()).useDelimiter("\\A");
-                String response = scanner.hasNext() ? scanner.next() : "";
-                scanner.close();
+                try (Scanner scanner =
+                        new Scanner(conn.getInputStream(), StandardCharsets.UTF_8).useDelimiter("\\A"); ) {
+                    String response = scanner.hasNext() ? scanner.next() : "";
+                    scanner.close();
 
-                JSONObject jsonResponse = JSONObject.fromObject(response);
-                status = jsonResponse.getInt("scanStatus");
-                var timeStamp = jsonResponse.getString("timeStamp");
+                    JSONObject jsonResponse = JSONObject.fromObject(response);
+                    status = jsonResponse.getInt("scanStatus");
+                    var timeStamp = jsonResponse.getString("timeStamp");
 
-                logger.println("Scan is in progress...   [ " + timeStamp + " ]");
+                    logger.println("Scan is in progress...   [ " + timeStamp + " ]");
+                }
 
             } catch (Exception e) {
                 logger.println("Error polling scan status: " + e.getMessage());
@@ -70,5 +70,4 @@ public class ScanService {
         }
         return true;
     }
-
 }
