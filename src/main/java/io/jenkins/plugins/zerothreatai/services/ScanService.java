@@ -11,12 +11,29 @@ import java.util.concurrent.TimeUnit;
 import net.sf.json.JSONObject;
 
 public class ScanService {
-    private static final String SCAN_API_URL = "https://api.zerothreat.ai/api/scan/devops";
+    private static final String CLOUD_ENDPOINT = "https://api.zerothreat.ai";
     private static final String ZT_TOKEN_HEADER_KEY = "zt-token";
+    private final String baseUrl;
 
-    public static ScanResponse initiateScan(Secret token) {
+    public ScanService() {
+        this.baseUrl = CLOUD_ENDPOINT;
+    }
+
+    public ScanService(String baseUrl) {
+        if (baseUrl != null && !baseUrl.isEmpty()) {
+            this.baseUrl = baseUrl;
+        } else {
+            this.baseUrl = CLOUD_ENDPOINT;
+        }
+    }
+
+    private String ztServerUrl() {
+        return this.baseUrl + "/api/scan/devops";
+    }
+
+    public ScanResponse initiateScan(Secret token) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(SCAN_API_URL).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(this.ztServerUrl()).openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty(ZT_TOKEN_HEADER_KEY, Secret.toString(token));
@@ -42,12 +59,12 @@ public class ScanService {
         }
     }
 
-    public static boolean pollScanStatus(Secret token, String code, PrintStream logger) {
+    public boolean pollScanStatus(Secret token, String code, PrintStream logger) {
         int status = 1;
         while (status < 4) {
             try {
                 TimeUnit.SECONDS.sleep(300);
-                HttpURLConnection conn = (HttpURLConnection) new URL(SCAN_API_URL + "/" + code).openConnection();
+                HttpURLConnection conn = (HttpURLConnection) new URL(this.ztServerUrl() + "/" + code).openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty(ZT_TOKEN_HEADER_KEY, Secret.toString(token));
 
